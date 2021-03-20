@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    html {
+      scroll-behavior: smooth;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font: 14px/1.4 Georgia, Serif;
+    }
+
+    #page-wrap {
+      margin: 50px;
+    }
+
+    p {
+      margin: 20px 0;
+    }
+
+    /* 
+	Generic Styling, for Desktops/Laptops 
+	*/
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    /* Zebra striping */
+    tr:nth-of-type(odd) {
+      background: #eee;
+    }
+
+    th {
+      background: #333;
+      color: white;
+      font-weight: bold;
+      cursor: s-resize;
+      background-repeat: no-repeat;
+      background-position: 3% center;
+    }
+
+    td,
+    th {
+      padding: 6px;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+
+    th.des:after {
+      content: "\21E9";
+    }
+
+    th.aes:after {
+      content: "\21E7";
+    }
+
+    /* 
+	Max width before this PARTICULAR table gets nasty
+	This query will take effect for any screen smaller than 760px
+	and also iPads specifically.
+	*/
+    @media only screen and (max-width: 760px),
+    (min-device-width: 768px) and (max-device-width: 1024px) {
+
+      /* Force table to not be like tables anymore */
+      table,
+      thead,
+      tbody,
+      th,
+      td,
+      tr {
+        display: block;
+      }
+
+      /* Hide table headers (but not display: none;, for accessibility) */
+      thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+      }
+
+      tr {
+        border: 1px solid #ccc;
+      }
+
+      td {
+        /* Behave  like a "row" */
+        border: none;
+        border-bottom: 1px solid #eee;
+        position: relative;
+        padding-left: 50%;
+      }
+
+      td:before {
+        /* Now like a table header */
+        position: absolute;
+        /* Top/left values mimic padding */
+        top: 6px;
+        left: 6px;
+        width: 45%;
+        padding-right: 10px;
+        white-space: nowrap;
+      }
+
+      /*
+		Label the data
+		*/
+      td:before {
+        content: attr(data-th) ": ";
+        font-weight: bold;
+        width: 6.5em;
+        display: inline-block;
+      }
+    }
+
+    /* Smartphones (portrait and landscape) ----------- */
+    @media only screen and (min-device-width : 320px) and (max-device-width : 480px) {
+      body {
+        padding: 0;
+        margin: 0;
+        width: 320px;
+      }
+    }
+
+    /* iPads (portrait and landscape) ----------- */
+    @media only screen and (min-device-width: 768px) and (max-device-width: 1024px) {
+      body {
+        width: 495px;
+      }
+    }
+  </style>
+
+
+
+  <style type="text/css">
+    svg {
+      flex-basis: 100%;
+      min-width: 200px;
+    }
+
+    .node {}
+
+    .link {
+      stroke: #999;
+      stroke-opacity: .6;
+      stroke-width: 1px;
+    }
+
+    .controls {
+      flex-basis: 200px;
+      padding: 0 5px;
+    }
+
+    .controls .group_by {
+      background-color: #eee;
+      border-radius: 3px;
+      padding: 5px;
+      margin: 5px 0;
+    }
+
+    .controls .group_by label {
+      display: inline-block;
+    }
+  </style>
+
+  <title>A Citation Graph calculated with all my books</title>
+
+</head>
+
+<body>
+
+  <h1>The nodes represent books, two nodes are connected if one book cites the other. </h1>
+  <h2>The clusters are sorted from left to right by publication date.</h2>
+  <h2>The bottom row of clusters represents books from my calibre library, from which citations are detected and drawn. </h2>
+  <h2>The top row represents books found on a public Goodreads database, these can only be targets of citations since I don't have their text.</h2>
+
+
+  <div class="controls">
+    <div class="group_by">
+      <form>
+        <input type="radio" onchange="simulation.restart()" id="default_layout" name="group" value="default">
+        <label for="default">Default</label><br>
+        <input type="radio" onchange="simulation.restart()" id="pubdate_layout" name="group" value="pubdate" checked>
+        <label for="pubdate">Publication Date</label><br>
+      </form>
+    </div>
+  </div>
+
+  <svg id='canvas' width="2160" height="1000"></svg>
+
+  <div id="page-wrap">
+
+    <h1>Book Metadata List (Only bottom row)</h1>
+    <p>Click the table header to sort data according to that column</p>
+    <p>Click on a row to focus that book on the Graph</p>
+
+  </div>
+  <script src="https://d3js.org/d3.v4.min.js" type="text/javascript"></script>
+  <script src="https://d3js.org/d3-selection-multi.v1.js"></script>
+
+  <script type="text/javascript">
+    var colors = d3.scaleOrdinal(d3.schemeCategory10);
+
+    let ifClicked = false;
+
+    var svg = d3.select("svg"),
+      width = +svg.attr("width"),
+      height = +svg.attr("height"),
+      node,
+      link;
+
+    const baseGroup = svg.append("g");
+
+    const menuItems = baseGroup.selectAll(".menuitems")
+
+    const isConnectedAsSource = (a, b) => linkedByIndex[`${a},${b}`];
+    const isConnectedAsTarget = (a, b) => linkedByIndex[`${b},${a}`];
+    const isConnected = (a, b) => isConnectedAsTarget(a, b) || isConnectedAsSource(a, b) || a === b;
+    const isEqual = (a, b) => a === b;
+    const nodeRadius = d => 15 * 1
+
+
+
+    svg.append('defs').append('marker')
+      .attrs({
+        'id': 'arrowhead',
+        'viewBox': '-0 -5 10 10',
+        'refX': 13,
+        'refY': 0,
+        'orient': 'auto',
+        'markerWidth': 13,
+        'markerHeight': 13,
+        'xoverflow': 'visible'
+      })
+      .append('svg:path')
+      .attr('d', 'M 0,-5 L 10 ,0 L 0,5')
+      .attr('fill', '#999')
+      .style('stroke', 'none');
+
+
+
+    // table with metadata
+    d3.csv("book_metadata.csv", function (error, data) {
+      if (error) throw error;
+
+      var sortAscending = true;
+      var table = d3.select('#page-wrap').append('table');
+      var titles = d3.keys(data[0]);
+      var headers = table.append('thead').append('tr')
+        .selectAll('th')
+        .data(titles).enter()
+        .append('th')
+        .text(function (d) {
+          return d;
+        })
+        .on('click', function (d) {
+          headers.attr('class', 'header');
+
+          if (sortAscending) {
+            rows.sort(function (a, b) { return b[d] < a[d]; });
+            sortAscending = false;
+            this.className = 'aes';
+          } else {
+            rows.sort(function (a, b) { return b[d] > a[d]; });
+            sortAscending = true;
+            this.className = 'des';
+          }
+
+        });
+
+      var rows = table.append('tbody').selectAll('tr')
+        .data(data).enter()
+        .append('tr');
+      rows.selectAll('td')
+        .data(function (d) {
+          return titles.map(function (k) {
+            return { 'value': d[k], 'name': k };
+          });
+        }).enter()
+        .append('td')
+        .attr('data-th', function (d) {
+          return d.name;
+        })
+        .text(function (d) {
+          return d.value;
+        });
+
+      d3.selectAll('tr').on("click", mouseClickFunctionTable)
+
+    });
+
+    var get_pos_x = get_pos('x')
+    var get_pos_y = get_pos('y')
+
+    function get_pos(coord) {
+
+      num_groups = 5
+      height_base = 800
+
+
+
+      return function (d) {
+
+
+        // what layout is selected?
+        var layout = d3.select('input[name="group"]:checked').property("value")
+
+        if (layout == 'default') {
+          if (coord == 'x') {
+            return d.px
+          }
+          if (coord == 'y') {
+            return d.py
+          }
+
+        }
+
+        group_char = d.category_date
+        
+        if (d.is_goodreads == 1){
+          height_node = height_base - 400
+        }else{
+          height_node = height_base
+        }
+
+        if (layout == 'pubdate') {
+          switch (group_char) {
+            case 'a':
+              if (coord == 'x') { return width / num_groups * 0.5 }
+              if (coord == 'y') { return height_node }
+              break;
+            case 'b':
+              if (coord == 'x') { return width / num_groups * 1 }
+              if (coord == 'y') { return height_node }
+              break;
+            case 'c':
+              if (coord == 'x') { return width / num_groups * 1.2 }
+              if (coord == 'y') { return height_node }
+              break;
+            case 'd':
+              if (coord == 'x') { return width / num_groups * 1.9 }
+              if (coord == 'y') { return height_node }
+              break;
+            case 'e':
+              if (coord == 'x') { return width / num_groups * 3 }
+              if (coord == 'y') { return height_node }
+              break;
+          }
+        }
+
+      }
+    }
+
+
+
+
+
+
+    var simulation = d3.forceSimulation()
+      .force("collide", d3.forceCollide(function (d) { return d.nodesize }).iterations(4))
+      .force("x", d3.forceX().x(get_pos_x).strength(1))
+      .force("y", d3.forceY().y(get_pos_y).strength(1))
+      .force("link", d3.forceLink().id(function (d) { return d.id; }).strength(0.0001))
+    //.force("charge", d3.forceManyBody())
+    //.force("center", d3.forceCenter(width / 2, height / 2))
+
+
+
+
+
+
+    var links = []
+    var nodes = []
+    var linkedByIndex = {};
+
+
+    d3.json("graph.json", function (error, graph) {
+      if (error) throw error;
+      links = graph.links
+      nodes = graph.nodes
+      // create link reference
+      links.forEach(d => {
+        linkedByIndex[`${d.source},${d.target}`] = true;
+      });
+
+
+      update(graph.links, graph.nodes);
+    })
+
+
+    function update(links, nodes) {
+      link = svg.selectAll(".link")
+        .data(links)
+        .enter()
+        .append("line")
+        .attr("class", "link")
+        .attr('marker-end', 'url(#arrowhead)')
+
+      link.append("title")
+        .text(function (d) { return d.type; });
+
+      edgepaths = svg.selectAll(".edgepath")
+        .data(links)
+        .enter()
+        .append('path')
+        .attrs({
+          'class': 'edgepath',
+          'fill-opacity': 0,
+          'stroke-opacity': 0,
+          'id': function (d, i) { return 'edgepath' + i }
+        })
+        .style("pointer-events", "none");
+
+
+      node = svg.selectAll(".node")
+        .data(nodes)
+        .enter()
+        .append("g")
+        .attr("class", "node")
+        .call(d3.drag()
+          .on("start", function () { })//dragstarted)
+          .on("drag", function () { })//dragged)
+
+          //.on("end", dragended)
+        );
+
+
+
+      node.append("circle")
+        .attr("r", function (d) { return d.nodesize })
+        .style("fill", function (d, i) { 
+          
+          if (d.is_goodreads){
+            switch (d.category_date) {
+              case 'a':
+                return 'green';
+                break;
+              case 'b':
+                return 'yellow';
+                break;
+              case 'c':
+                return 'blue';
+                break;
+              case 'd':
+                return 'red';
+                break;
+              case 'e':
+                return 'purple';
+                break;
+            }
+
+          }
+          else{
+            return colors(i); 
+          }  
+        
+        
+        })
+
+      //node.append("title")
+      //    .text(function (d) {return d.id;});
+
+      // node.append("text")
+      // .attr("dy", -3)
+      // .text(function (d) {return d.name;})
+      // .style('opacity' , 1);
+
+      simulation
+        .nodes(nodes)
+        .on("tick", ticked);
+
+      simulation.force("link")
+        .links(links);
+
+
+      node.on('mouseout', mouseOutFunction)
+        .on('mouseover', mouseOverFunction)
+        .on('click', mouseClickFunction)
+
+    }
+
+    function ticked() {
+      link
+        .attr("x1", function (d) { return d.source.x; })
+        .attr("y1", function (d) { return d.source.y; })
+        .attr("x2", function (d) { return d.target.x; })
+        .attr("y2", function (d) { return d.target.y; });
+
+      node
+        .attr("transform", function (d) { return "translate(" + d.x + ", " + d.y + ")"; });
+
+
+      edgepaths.attr('d', function (d) {
+        return 'M ' + d.source.x + ' ' + d.source.y + ' L ' + d.target.x + ' ' + d.target.y;
+      });
+
+
+
+    }
+
+
+    const mouseOverFunction = d => {
+
+      if (ifClicked) return;
+
+      node
+        .append("text")
+        .attr("dy", -3)
+        .attr("class", "mylabel")//adding a label class
+        .text(function (o) {
+
+          const isConnectedValue = isConnected(o.id, d.id);
+          if (isConnectedValue) {
+            return o.name;
+          } return ""
+        })
+
+
+      node
+        .transition(500)
+        .style('opacity', o => {
+          const isConnectedValue = isConnected(o.id, d.id);
+          if (isConnectedValue) {
+            return 1.0;
+          }
+          return 0.1;
+        });
+
+
+      link
+        .transition(500)
+        .style('stroke-opacity', o => {
+          return (o.source === d || o.target === d ? 1 : 0.1)
+        })
+        .transition(500)
+        .attr('marker-end', o => (o.source === d || o.target === d ? 'url(#arrowhead)' : 'url()'));
+    };
+
+
+    const mouseOutFunction = d => {
+      if (ifClicked) return;
+
+      //remove labels from mouseon function   
+      d3.selectAll(".mylabel").remove()
+
+
+      node
+        .transition(500)
+        .style('opacity', 1);
+
+      link
+        .transition(500)
+        .style("stroke-opacity", o => {
+        });
+
+    };
+
+    const mouseClickFunctionTable = d => {
+
+      ifClicked = true;
+
+      var elmnt = document.getElementById("canvas");
+      elmnt.scrollIntoView();
+
+      // get reference to node with same id from table row
+      var this_node_id = node._groups[0].filter(function (f) { return f.__data__.name === d.clean_title })[0].__data__.id
+      var this_node_name = node._groups[0].filter(function (f) { return f.__data__.name === d.clean_title })[0].__data__.name
+
+      node
+        .append("text")
+        .attr("dy", -3)
+        .attr("class", "mylabel")//adding a label class
+        .text(function (o) {
+
+          const isConnectedValue = isConnected(o.id, this_node_id);
+          if (isConnectedValue) {
+            return o.name;
+          } return ""
+        })
+
+      node
+        .transition(500)
+        .style('opacity', o => {
+          const isConnectedValue = isConnected(o.id, this_node_id);
+          if (isConnectedValue) {
+            return 1.0;
+          }
+          return 0.1
+        })
+
+      link
+        .transition(500)
+        .style('stroke-opacity', o => (o.source.name === this_node_name || o.target.name === this_node_name ? 1 : 0.1))
+        .transition(500)
+        .attr('marker-end', o => (o.source.name === this_node_name || o.target.name === this_node_name ? 'url(#arrowhead)' : 'url()'));
+
+    }
+
+    const mouseClickFunction = d => {
+      // we don't want the click event bubble up to svg
+      d3.event.stopPropagation();
+
+      //remove labels from mouseon function   
+      d3.selectAll(".mylabel").remove()
+
+      menuItems.attr('visibility', "hidden");
+
+      ifClicked = true;
+
+      node
+        .transition(500)
+        .style('opacity', 1)
+
+      link
+        .transition(500);
+
+      node
+        .transition(500)
+        .style('opacity', o => {
+          const isConnectedValue = isConnected(o.id, d.id);
+          if (isConnectedValue) {
+            return 1.0;
+          }
+          return 0.1
+        })
+
+      link
+        .transition(500)
+        .style('stroke-opacity', o => (o.source === d || o.target === d ? 1 : 0.1))
+        .transition(500)
+        .attr('marker-end', o => (o.source === d || o.target === d ? 'url(#arrowhead)' : 'url()'));
+
+
+
+      node
+        .append("text")
+        .attr("dy", -3)
+        .attr("class", "mylabel")//adding a label class
+        .text(function (o) {
+
+          const isConnectedValue = isConnected(o.id, d.id);
+          if (isConnectedValue) {
+            return o.name;
+          } return ""
+        })
+
+
+    };
+
+
+
+    svg.on('click', () => {
+      ifClicked = false;
+      //remove labels from mouseon function   
+      d3.selectAll(".mylabel").remove()
+
+      node
+        .transition(500)
+        .style('opacity', 1);
+
+      link
+        .transition(500)
+        .style("stroke-opacity", 0.5)
+
+      menuItems.attr('visibility', "hidden");
+    });
+
+
+  </script>
+
+</body>
+
+</html>
