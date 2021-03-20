@@ -29,8 +29,8 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser()
     
-    parser.add_argument("--use_goodreads", help="calculate citation graph with external goodreads database")
-    parser.add_argument("--use_citation_model", help="wheter to use NER model to remove false positives from detected citations")
+    parser.add_argument("--use_goodreads", help="calculate citation graph with external goodreads database",action='store_true')
+    parser.add_argument("--use_citation_model", help="wheter to use NER model to remove false positives from detected citations",action='store_true')
 
     
     args = parser.parse_args()
