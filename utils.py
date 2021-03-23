@@ -108,7 +108,7 @@ def search_book_pubdate_by_alias(book_alias,using_goodreads):
         
 def check_if_citation_ner(model,tokenizer,sentence):
     
-    inputs = tokenizer(sentence, return_tensors="pt")
+    inputs = tokenizer(sentence, return_tensors="pt",truncation=True,padding=True)
 
     logits = model(**inputs)
     idx = torch.nonzero(torch.argmax(logits[0][0],axis=1))
@@ -148,10 +148,10 @@ class BookProcesserFactory:
         lookup_func = self.lookup_func
         
         def process_book(tup,model,tokenizer):
-                  
                 global metadata_calibre
                 #global metadata_goodreads
                 
+                roberta_calls = 0
                 
                 id_book,aliases_current_book,current_book_name,book_lines_list = tup 
 
@@ -175,17 +175,21 @@ class BookProcesserFactory:
 
                                 # cant use this on lines that are too big
                                 is_citation = True
-                                if (len(book.split())<3 and len(line)<1400 and use_citation_model):
+                                if (len(book.split())<3 and use_citation_model):
+
                                     try:
                                         book_detected = check_if_citation_ner(model,tokenizer,line)
-                                        if (book_detected != ""):
+                                        roberta_calls+=1
+                                        if (book_detected.find(book)!=-1 or book.find(book_detected)!=-1):
                                             is_citation= True
                                         else:
                                             is_citation = False
                                     except Exception as e:
                                         print(e)
-                                        print(f"failed on line with length {len(line)}")
+                                        print(f'failed on book {current_book_name}')
+                                        print(line)
                                         is_citation = True
+                                        break
                                 else:
                                     book_detected = -1
                                     # if the name of the book is long it is unlikely it is not a citation
@@ -216,7 +220,6 @@ class BookProcesserFactory:
                                     if(book != current_book_name and book not in aliases_current_book):
                                         edge = (current_book_name, book)
                                         edges_to_add.append(edge)
-
                         return (current_book_name,edges_to_add,pieces_dataset)
         return process_book
 

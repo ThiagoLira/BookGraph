@@ -28,6 +28,15 @@
       margin: 20px 0;
     }
 
+    .mylabel {	
+        width: 60px;					
+        height: 28px;					
+        padding: 2px;				
+        font: 12px sans-serif;		
+        background: lightsteelblue;	
+        border: 0px;		
+        border-radius: 8px;			
+    }
     /* 
 	Generic Styling, for Desktops/Laptops 
 	*/
@@ -516,16 +525,17 @@
 
       node
         .append("text")
-        .attr("dy", -3)
         .attr("class", "mylabel")//adding a label class
+        .attr("dy", -3)
         .text(function (o) {
 
           const isConnectedValue = isConnected(o.id, d.id);
           if (isConnectedValue) {
-            return o.name;
+            return `${o.name} by: \n ${o.authors}`;
           } return ""
         })
 
+      
 
       node
         .transition(500)
@@ -585,7 +595,7 @@
 
           const isConnectedValue = isConnected(o.id, this_node_id);
           if (isConnectedValue) {
-            return o.name;
+            return `${o.name} by: \n ${o.authors}`;
           } return ""
         })
 
@@ -651,7 +661,7 @@
 
           const isConnectedValue = isConnected(o.id, d.id);
           if (isConnectedValue) {
-            return o.name;
+            return `${o.name} by: \n ${o.authors}`;
           } return ""
         })
 
