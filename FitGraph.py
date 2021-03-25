@@ -39,7 +39,7 @@ if __name__ == "__main__":
     
     
     
-    model = RobertaForTokenClassification.from_pretrained('fine-tuned-model-ner-better-data-2')
+    model = RobertaForTokenClassification.from_pretrained('fine-tuned-model-ner-better-data-3')
     tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
 
     model.share_memory()

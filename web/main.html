@@ -36,7 +36,14 @@
         background: lightsteelblue;	
         border: 0px;		
         border-radius: 8px;			
+    }        
+    
+    .select_box{
+      margin: 50px;
     }
+    select {
+            display: block;
+        }
     /* 
 	Generic Styling, for Desktops/Laptops 
 	*/
@@ -158,8 +165,6 @@
       min-width: 200px;
     }
 
-    .node {}
-
     .link {
       stroke: #999;
       stroke-opacity: .6;
@@ -193,24 +198,21 @@
   <h2>The clusters are sorted from left to right by publication date.</h2>
   <h2>The bottom row of clusters represents books from my calibre library, from which citations are detected and drawn. </h2>
   <h2>The top row represents books found on a public Goodreads database, these can only be targets of citations since I don't have their text.</h2>
+  <h2>Click on any node to focus on it. Hover mouse to see book titles and connections.</h2>
+  <h2>For some filtering options and metatada check below the graph!</h2>
+
+  <svg id='canvas' width="2160" height="1800"></svg>
 
 
-  <div class="controls">
-    <div class="group_by">
-      <form>
-        <input type="radio" onchange="simulation.restart()" id="default_layout" name="group" value="default">
-        <label for="default">Default</label><br>
-        <input type="radio" onchange="simulation.restart()" id="pubdate_layout" name="group" value="pubdate" checked>
-        <label for="pubdate">Publication Date</label><br>
-      </form>
-    </div>
-  </div>
 
-  <svg id='canvas' width="2160" height="1000"></svg>
 
+ <div class="select_box">
+ <h1>Use this menu to filter by author</h1> 
+ <div id="selector"></div>
+ </div> 
   <div id="page-wrap">
 
-    <h1>Book Metadata List (Only bottom row)</h1>
+    <h1>Book Metadata List</h1>
     <p>Click the table header to sort data according to that column</p>
     <p>Click on a row to focus that book on the Graph</p>
 
@@ -228,6 +230,14 @@
       height = +svg.attr("height"),
       node,
       link;
+    
+
+    // select dropdown
+
+    var dropdown = d3.select("#selector")
+                        .insert("select", "svg");
+    
+
 
     const baseGroup = svg.append("g");
 
@@ -315,58 +325,42 @@
     function get_pos(coord) {
 
       num_groups = 5
-      height_base = 800
+      height_base = 1220
 
 
 
       return function (d) {
 
-
-        // what layout is selected?
-        var layout = d3.select('input[name="group"]:checked').property("value")
-
-        if (layout == 'default') {
-          if (coord == 'x') {
-            return d.px
-          }
-          if (coord == 'y') {
-            return d.py
-          }
-
-        }
-
         group_char = d.category_date
         
         if (d.is_goodreads == 1){
-          height_node = height_base - 400
+          height_node = height_base - 700
         }else{
           height_node = height_base
         }
 
-        if (layout == 'pubdate') {
           switch (group_char) {
             case 'a':
-              if (coord == 'x') { return width / num_groups * 0.5 }
+              if (coord == 'x') { return 100 + width / num_groups * 0.5 }
               if (coord == 'y') { return height_node }
               break;
             case 'b':
-              if (coord == 'x') { return width / num_groups * 1 }
+              if (coord == 'x') { return 100 + width / num_groups * 1 }
               if (coord == 'y') { return height_node }
               break;
             case 'c':
-              if (coord == 'x') { return width / num_groups * 1.2 }
+              if (coord == 'x') { return 100 + width / num_groups * 1.2 }
               if (coord == 'y') { return height_node }
               break;
             case 'd':
-              if (coord == 'x') { return width / num_groups * 1.9 }
+              if (coord == 'x') { return 100 + width / num_groups * 1.9 }
               if (coord == 'y') { return height_node }
               break;
             case 'e':
-              if (coord == 'x') { return width / num_groups * 3 }
+              if (coord == 'x') { return 100 + width / num_groups * 3 }
               if (coord == 'y') { return height_node }
               break;
           }
-        }
 
       }
     }
@@ -377,7 +371,7 @@
 
 
     var simulation = d3.forceSimulation()
-      .force("collide", d3.forceCollide(function (d) { return d.nodesize }).iterations(4))
+      .force("collide", d3.forceCollide(function (d) { return d.nodesize +15 }).iterations(2))
       .force("x", d3.forceX().x(get_pos_x).strength(1))
       .force("y", d3.forceY().y(get_pos_y).strength(1))
       .force("link", d3.forceLink().id(function (d) { return d.id; }).strength(0.0001))
@@ -496,6 +490,19 @@
       node.on('mouseout', mouseOutFunction)
         .on('mouseover', mouseOverFunction)
         .on('click', mouseClickFunction)
+
+
+      // populate dropdown menu with authors
+      dropdown.selectAll("option")
+                        .data(nodes)
+                        .enter().append("option")
+                          .attr("value", function (d) { return d['authors']; })
+                          .text(function (d) {
+                              return d['authors'] 
+                          });
+    
+    // register function                       
+    dropdown.on('change',dropdownChange)
 
     }
 
@@ -617,6 +624,75 @@
 
     }
 
+
+    const dropdownChange = () => {
+
+      var elmnt = document.getElementById("canvas");
+      elmnt.scrollIntoView();
+      
+      ifClicked = true;
+      
+      // we don't want the click event bubble up to svg
+      d3.event.stopPropagation();
+
+      //remove labels from mouseon function   
+      d3.selectAll(".mylabel").remove()
+      
+      var selectedAuthor = d3.selectAll("select").property('value')
+
+      var nodes_author = node._groups[0].filter(function (f) { return f.__data__.authors === selectedAuthor })
+
+      node
+        .append("text")
+        .attr("dy", -3)
+        .attr("class", "mylabel")//adding a label class
+        .text(function (o) {
+          
+          isConnectedValue = nodes_author.reduce((acc,i)=> {
+                return acc || ( isConnected(o.id,i.__data__.id)) 
+          },false)
+          
+
+          if (isConnectedValue) {
+            return `${o.name} by: \n ${o.authors}`;
+          } return ""
+        })
+
+        node
+          .transition(500)
+          .style('opacity', o => {
+            isConnectedValue = nodes_author.reduce((acc,i)=> {
+                  return acc || ( isConnected(o.id,i.__data__.id)) 
+            },false)
+            if (isConnectedValue) {
+              return 1.0;
+            }
+            return 0.1
+          })
+
+         link
+           .transition(500)
+           .style('stroke-opacity', o => {
+
+              isConnectedValue = nodes_author.reduce((acc,i)=> {
+                    return acc || ( o.target.name===i.__data__.name || o.source.name===i.__data__.name ) 
+              },false)
+
+              return isConnectedValue ? 1 : 0.1;
+
+             
+            })
+            .attr('marker-end', o => {
+              isConnectedValue = nodes_author.reduce((acc,i)=> {
+                    return acc || ( o.target.name===i.__data__.name || o.source.name===i.__data__.name ) 
+              },false)
+
+              return isConnectedValue ? 'url(#arrowhead)' : 'url()';
+            });
+
+    }
+
+
     const mouseClickFunction = d => {
       // we don't want the click event bubble up to svg
       d3.event.stopPropagation();
@@ -664,6 +740,7 @@
             return `${o.name} by: \n ${o.authors}`;
           } return ""
         })
+        
 
 
     };

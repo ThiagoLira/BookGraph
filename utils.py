@@ -120,8 +120,41 @@ def check_if_citation_ner(model,tokenizer,sentence):
     
 
     return book
+     
+def check_if_citation_ner_multiple_books(model,tokenizer,sentence):
+    
+    list_books_found = []
+    
+    inputs = tokenizer(sentence, return_tensors="pt",truncation=True,padding=True)
+
+    logits = model(**inputs)
+    idx = torch.nonzero(torch.argmax(logits[0][0],axis=1))
+    if (len(idx)):
+
+        distinct_book_ids = []
+        last = idx[0]
+        book_for_now = [last]
+
+        for i in idx[1:]:
+            if i - last == 1:
+                book_for_now.append(i)
+                last = i
+            else:
+                distinct_book_ids.append(torch.cat(book_for_now))
+                last = i
+                book_for_now = [last]
+
+        distinct_book_ids.append(torch.cat(book_for_now))  
+
+        list_books_found = []
+
+        for book_ids in distinct_book_ids:
+            ids_labeled = inputs.input_ids[0][book_ids]
+            tokens = tokenizer.convert_ids_to_tokens(ids_labeled)
+            book = tokenizer.convert_tokens_to_string(tokens).strip()
+            list_books_found.append(book)
         
-        
+    return list_books_found
         
 class BookProcesserFactory:
     
@@ -173,23 +206,24 @@ class BookProcesserFactory:
                             if(match):
                                 book = match[0]
 
-                                # cant use this on lines that are too big
                                 is_citation = True
+                                book_detected = ''
                                 if (len(book.split())<3 and use_citation_model):
 
-                                    try:
-                                        book_detected = check_if_citation_ner(model,tokenizer,line)
-                                        roberta_calls+=1
-                                        if (book_detected.find(book)!=-1 or book.find(book_detected)!=-1):
-                                            is_citation= True
-                                        else:
-                                            is_citation = False
-                                    except Exception as e:
-                                        print(e)
-                                        print(f'failed on book {current_book_name}')
-                                        print(line)
-                                        is_citation = True
-                                        break
+                                    books_detected = check_if_citation_ner_multiple_books(model,tokenizer,line)
+                                        
+                                    roberta_calls+=1
+                                    if (books_detected):
+                                        for b in books_detected:
+                                            if (book.find(b)!=-1):
+                                                book_detected = b
+                                                is_citation = True
+                                            else:
+                                                is_citation = False
+                                    else:
+                                        is_citation = False
+
+
                                 else:
                                     book_detected = -1
                                     # if the name of the book is long it is unlikely it is not a citation
