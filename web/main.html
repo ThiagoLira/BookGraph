@@ -186,6 +186,19 @@
     .controls .group_by label {
       display: inline-block;
     }
+    
+    /* canvas container */
+    .container{
+        display: flex;
+    }
+    .fixed{
+        width: 2160px;
+    }
+    .flex-item{
+        margin-right: 5px;
+        flex-grow: 1;
+        white-space: nowrap;
+    }
   </style>
 
   <title>A Citation Graph calculated with all my books</title>
@@ -201,12 +214,19 @@
   <h2>Click on any node to focus on it. Hover mouse to see book titles and connections.</h2>
   <h2>For some filtering options and metatada check below the graph!</h2>
 
-  <svg id='canvas' width="2160" height="1800"></svg>
 
+  <div class='container'>
+    <svg class='fixed' id='canvas' width="2160" height="1800"></svg>
+    <div class='flex-item' id='selected-book'></div>
+    <div class='flex-item' id='current-selection-ingoing'>
+  <h2>    Cited By  |  </h2>
+    </div>
+    <div class='flex-item' id='current-selection-outgoing'>
+  <h2>    Cites  |   </h2>
+    </div>
+  </div>
 
-
-
- <div class="select_box">
+ <div class="select-box">
  <h1>Use this menu to filter by author</h1> 
  <div id="selector"></div>
  </div> 
@@ -274,6 +294,7 @@
       if (error) throw error;
 
       var sortAscending = true;
+
       var table = d3.select('#page-wrap').append('table');
       var titles = d3.keys(data[0]);
       var headers = table.append('thead').append('tr')
@@ -319,17 +340,18 @@
 
     });
 
-    var get_pos_x = get_pos('x')
-    var get_pos_y = get_pos('y')
 
-    function get_pos(coord) {
+    function get_pos(coord,graph) {
 
-      num_groups = 5
       height_base = 1220
 
 
-
+      distinct_groups = [...new Set(graph.nodes.map(item=>item.category_date))].sort()
+      n_distinct_groups = distinct_groups.length;
+      
       return function (d) {
+
+
 
         group_char = d.category_date
         
@@ -339,53 +361,16 @@
           height_node = height_base
         }
 
-          switch (group_char) {
-            case 'a':
-              if (coord == 'x') { return 100 + width / num_groups * 0.5 }
-              if (coord == 'y') { return height_node }
-              break;
-            case 'b':
-              if (coord == 'x') { return 100 + width / num_groups * 1 }
-              if (coord == 'y') { return height_node }
-              break;
-            case 'c':
-              if (coord == 'x') { return 100 + width / num_groups * 1.2 }
-              if (coord == 'y') { return height_node }
-              break;
-            case 'd':
-              if (coord == 'x') { return 100 + width / num_groups * 1.9 }
-              if (coord == 'y') { return height_node }
-              break;
-            case 'e':
-              if (coord == 'x') { return 100 + width / num_groups * 3 }
-              if (coord == 'y') { return height_node }
-              break;
-          }
 
+        var index_on_groups = distinct_groups.findIndex(x=>x == d.category_date)
+        
+        if (coord == 'x') { return width / (n_distinct_groups - index_on_groups + 1)*1.3 }
+        if (coord == 'y') { return height_node }
+          
       }
+
     }
-
-
-
-
-
-
-    var simulation = d3.forceSimulation()
-      .force("collide", d3.forceCollide(function (d) { return d.nodesize +15 }).iterations(2))
-      .force("x", d3.forceX().x(get_pos_x).strength(1))
-      .force("y", d3.forceY().y(get_pos_y).strength(1))
-      .force("link", d3.forceLink().id(function (d) { return d.id; }).strength(0.0001))
-    //.force("charge", d3.forceManyBody())
-    //.force("center", d3.forceCenter(width / 2, height / 2))
-
-
-
-
-
-
-    var links = []
-    var nodes = []
-    var linkedByIndex = {};
+    
 
 
     d3.json("graph.json", function (error, graph) {
@@ -398,8 +383,37 @@
       });
 
 
+     get_pos_x = get_pos('x',graph)
+     get_pos_y = get_pos('y',graph)
+      
+      simulation = d3.forceSimulation()
+        .force("collide", d3.forceCollide(function (d) { return d.nodesize  }).iterations(2))
+        .force("x", d3.forceX().x(get_pos_x).strength(1))
+        .force("y", d3.forceY().y(get_pos_y).strength(1))
+        .force("link", d3.forceLink().id(function (d) { return d.id; }).strength(0.0001))
+      //.force("charge", d3.forceManyBody())
+      //.force("center", d3.forceCenter(width / 2, height / 2))
+      
       update(graph.links, graph.nodes);
+
+
+
     })
+
+
+
+
+
+
+
+
+
+
+    var links = []
+    var nodes = []
+    var linkedByIndex = {};
+
+
 
 
     function update(links, nodes) {
@@ -445,24 +459,7 @@
         .style("fill", function (d, i) { 
           
           if (d.is_goodreads){
-            switch (d.category_date) {
-              case 'a':
-                return 'green';
-                break;
-              case 'b':
-                return 'yellow';
-                break;
-              case 'c':
-                return 'blue';
-                break;
-              case 'd':
-                return 'red';
-                break;
-              case 'e':
-                return 'purple';
-                break;
-            }
-
+            return colors(i)
           }
           else{
             return colors(i); 
@@ -582,6 +579,73 @@
         });
 
     };
+
+
+
+    const populaTableAfterClick = (nodes_target,nodes_source) => {
+
+
+      // delete current table 
+      d3.selectAll('.temp-table').remove()
+
+
+
+      var sortAscending = true;
+
+      // table TARGET
+
+      var table_target = d3.select('#current-selection-outgoing').append('table')
+                          .attr("class", "temp-table");
+
+
+      table_target.append('thead');
+      table_target.append('tbody');
+
+    // create the table header
+    var thead_target = table_target.select("thead").selectAll("th")
+      .data(d3.keys(nodes_target[0]))
+      .enter().append("th").text(function(d){return d});
+    
+      // fill the table
+    // create rows
+    var tr_target = table_target.select("tbody").selectAll("tr")
+      .data(nodes_target).enter().append("tr")
+
+    // cells
+    var td_target = tr_target.selectAll("td")
+      .data(function(d){return d3.values(d)})
+      .enter().append("td")
+      .text(function(d) {return d})
+
+      // table SOURCE
+
+      var table_source = d3.select('#current-selection-ingoing').append('table')
+                          .attr("class", "temp-table");
+
+
+      table_source.append('thead');
+      table_source.append('tbody');
+
+    // create the table header
+    var thead_source = table_source.select("thead").selectAll("th")
+      .data(d3.keys(nodes_source[0]))
+      .enter().append("th").text(function(d){return d});
+    
+      // fill the table
+    // create rows
+    var tr_source = table_source.select("tbody").selectAll("tr")
+      .data(nodes_source).enter().append("tr")
+
+    // cells
+    var td_source = tr_source.selectAll("td")
+      .data(function(d){return d3.values(d)})
+      .enter().append("td")
+      .text(function(d) {return d})
+
+
+
+    }
+
 
     const mouseClickFunctionTable = d => {
 
@@ -740,9 +804,18 @@
             return `${o.name} by: \n ${o.authors}`;
           } return ""
         })
-        
-
-
+       
+    // populate table with related nodes from clicked
+    nodes_target = nodes.filter(function(f){return isConnectedAsTarget(f.id,d.id)})
+    nodes_source = nodes.filter(function(f){return isConnectedAsSource(f.id,d.id)})
+    // filter only relevant data
+    nodes_target = nodes_target.map(d=>{return {name: d.name , authors: d.authors.split('&')[0]}})
+    nodes_source = nodes_source.map(d=>{return {name: d.name , authors: d.authors.split('&')[0]}})
+    // empty current text 
+    d3.selectAll("#selected-book").selectAll('h2').remove()
+    // append current book name
+    d3.selectAll('#selected-book').append('h2').text(()=> {return `Selected Book: ${d.name} | `})
+    populaTableAfterClick(nodes_target,nodes_source);
     };
 
 
@@ -751,7 +824,11 @@
       ifClicked = false;
       //remove labels from mouseon function   
       d3.selectAll(".mylabel").remove()
+      d3.selectAll("#selected-book").selectAll('h2').remove()
 
+      // delete current tables for citations from previously clicked node 
+      d3.selectAll('.temp-table').remove()
+      
       node
         .transition(500)
         .style('opacity', 1);
