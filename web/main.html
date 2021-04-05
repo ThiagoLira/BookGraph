@@ -192,11 +192,12 @@
         display: flex;
     }
     .fixed{
-        width: 2160px;
+        width: 1500px;
+        flex: 0 0 1500px;
     }
     .flex-item{
         margin-right: 5px;
-        flex-grow: 1;
+        flex-grow: 10%;
         white-space: nowrap;
     }
   </style>
@@ -212,17 +213,18 @@
   <h2>The bottom row of clusters represents books from my calibre library, from which citations are detected and drawn. </h2>
   <h2>The top row represents books found on a public Goodreads database, these can only be targets of citations since I don't have their text.</h2>
   <h2>Click on any node to focus on it. Hover mouse to see book titles and connections.</h2>
+  <h2>After clicking on some node, the tables on the left will update with citations from and to the selected book!</h2>
   <h2>For some filtering options and metatada check below the graph!</h2>
 
 
   <div class='container'>
-    <svg class='fixed' id='canvas' width="2160" height="1800"></svg>
-    <div class='flex-item' id='selected-book'></div>
+    <svg class='fixed' id='canvas' width="1500" height="1800"></svg>
+    <!--  <div class='flex-item' id='selected-book'></div> -->
     <div class='flex-item' id='current-selection-ingoing'>
-  <h2>    Cited By  |  </h2>
+  <h2>    Cited By  </h2>
     </div>
     <div class='flex-item' id='current-selection-outgoing'>
-  <h2>    Cites  |   </h2>
+  <h2>  |  Cites     </h2>
     </div>
   </div>
 
@@ -814,7 +816,7 @@
     // empty current text 
     d3.selectAll("#selected-book").selectAll('h2').remove()
     // append current book name
-    d3.selectAll('#selected-book').append('h2').text(()=> {return `Selected Book: ${d.name} | `})
+    d3.selectAll('#selected-book').append('h2').style('font-size','15px').text(()=> {return `Selected Book: ${d.name} | `})
     populaTableAfterClick(nodes_target,nodes_source);
     };
 

@@ -127,3 +127,13 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# random garbage
+OLD/
+books_raw/
+fine-tuned*
+*.csv
+*.jsonl
+pickled*
+books_open*
+.vscode/
