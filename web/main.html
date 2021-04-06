@@ -158,22 +158,25 @@
 
 <body>
 
-  <h1>The nodes represent books, two nodes are connected if one book cites the other. </h1>
-  <h2>The clusters are sorted from left to right by publication date.</h2>
-  <h2>The bottom row of clusters represents books from my calibre library, from which citations are detected and drawn.
-  </h2>
-  <h2>The top row represents books found on a public Goodreads database, these can only be targets of citations since I
-    don't have their text.</h2>
-  <h2>Click on any node to focus on it. Hover mouse to see book titles and connections.</h2>
-  <h2>After clicking on some node, the tables on the left will update with citations from and to the selected book!</h2>
-  <h2>For some filtering options and metatada check below the graph!</h2>
-
+<div class="jumbotron">
+  <h1 class="text-center">The nodes represent books, two nodes are connected if one book cites the other. </h1>
+  <p class="text-center">The clusters are sorted from left to right by publication date.</p>
+  
+  <p class="text-center">The bottom row of clusters represents books from my calibre library, from which citations are detected and drawn.</p>
+  <p class="text-center">The top row represents books found on a public Goodreads database, these can only be targets of citations since I don't have their text.</p>
+  
+<h2 class='text-center'>Click on any node to focus on it. Hover mouse to see book titles and connections.</h2>  
+<p class='text-center'>After clicking on some node, the tables on the left will update with citations from and to the selected book!</p>  
+<p class='text-center'>For some filtering options and metatada check below the graph!</p>  
+</div>
+  
 
   <div class='container-fluid' style='height: 1500px'>
     <div class='row w-100 h-100'>
-      <div class='col-sm-2 h-100' id='current-selection-outgoing'> </div>
-      <svg class='col-sm-8 h-100' id='canvas'></svg>
-      <div class='col-sm-2 h-100' id='current-selection-ingoing'> </div>
+      <div class='col-sm-2' id='current-selection-outgoing'> </div>
+      <!-- pl and pr removes the margin so we can calculate the borders limits on the canvas correctly for the animations -->
+      <svg class='col-sm-8 h-100 pl-0 pr-0' id='canvas'></svg>
+      <div class='col-sm-2' id='current-selection-ingoing'> </div>
     </div>
 
     <div class='row'>

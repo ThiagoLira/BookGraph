@@ -260,26 +260,28 @@ dropdown.on('change',dropdownChange)
 
 }
 
+// borders limits calculation
+var new_pos_x = function (d){return Math.max(d.nodesize, Math.min(width  - d.nodesize, d.x))} 
+var new_pos_y = function (d){return Math.max(d.nodesize, Math.min(height - d.nodesize, d.y))} 
+
 function ticked() {
+    node
+    .attr("transform", function (d) { return "translate(" + new_pos_x(d) + ", " + new_pos_y(d) + ")"; });
+   
+    node
+     .attr("cx", function (d) {return d.x = new_pos_x(d)} )
+     .attr("cy", function(d) { return d.y = new_pos_y(d)}) 
+    
+
+    edgepaths.attr('d', function (d) {
+    return 'M ' + d.source.x + ' ' + d.source.y + ' L ' + d.target.x + ' ' + d.target.y;
+    });
+    
     link
     .attr("x1", function (d) { return d.source.x; })
     .attr("y1", function (d) { return d.source.y; })
     .attr("x2", function (d) { return d.target.x; })
     .attr("y2", function (d) { return d.target.y; });
-
-
-    edgepaths.attr('d', function (d) {
-    return 'M ' + d.source.x + ' ' + d.source.y + ' L ' + d.target.x + ' ' + d.target.y;
-    });
-
-   
-    node
-     .attr("cx", function(d) { return d.x = Math.max(d.nodesize, Math.min(width - d.nodesize, d.x)); })
-     .attr("cy", function(d) { return d.y = Math.max(d.nodesize, Math.min(height - d.nodesize, d.y)); });
-    
-    node
-    .attr("transform", function (d) { return "translate(" + d.x + ", " + d.y + ")"; });
-    
 
 
 }
@@ -428,6 +430,9 @@ var td_source = tr_source.selectAll("td")
 
 const mouseClickFunctionTable = d => {
 
+    // sneaky way to also draw tables of selected book
+    mouseClickFunction(d);
+    
     ifClicked = true;
 
     var elmnt = document.getElementById("canvas");
