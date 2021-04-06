@@ -7,10 +7,7 @@ height = document.getElementById('canvas').clientHeight;
 
 var svg = d3.select("svg"),
     node,
-    link;
-//    width = +svg.attr("width"),
-//    height = +svg.attr("height"),
-
+    link
 
 // select dropdown
 
@@ -106,8 +103,8 @@ d3.csv("book_metadata.csv", function (error, data) {
 
 function get_pos(coord,graph) {
 
-    height_base = 800 
-
+    height_base = 900 
+    var offset_goodreads = 70
 
     distinct_groups = [...new Set(graph.nodes.map(item=>item.category_date))].sort()
     n_distinct_groups = distinct_groups.length;
@@ -119,7 +116,7 @@ function get_pos(coord,graph) {
     group_char = d.category_date
     
     if (d.is_goodreads == 1){
-        height_node = height_base - 400
+        height_node = height_base - 500
     }else{
         height_node = height_base
     }
@@ -127,7 +124,10 @@ function get_pos(coord,graph) {
 
     var index_on_groups = distinct_groups.findIndex(x=>x == d.category_date)
     
-    if (coord == 'x') { return width / (n_distinct_groups - index_on_groups + 1)*1.3 }
+    offset = d.is_goodreads? offset_goodreads : 0    
+
+
+    if (coord == 'x') { return 100 + offset + width / (n_distinct_groups - index_on_groups + 1)*1.4 }
     if (coord == 'y') { return height_node }
         
     }
@@ -150,7 +150,7 @@ d3.json("graph.json", function (error, graph) {
     get_pos_y = get_pos('y',graph)
     
     simulation = d3.forceSimulation()
-    .force("collide", d3.forceCollide(function (d) { return d.nodesize  }).iterations(2))
+    .force("collide", d3.forceCollide(function (d) { return (d.is_goodreads?  d.nodesize+5 :d.nodesize)   }).iterations(2))
     .force("x", d3.forceX().x(get_pos_x).strength(1))
     .force("y", d3.forceY().y(get_pos_y).strength(1))
     .force("link", d3.forceLink().id(function (d) { return d.id; }).strength(0.0001))
@@ -208,16 +208,10 @@ function update(links, nodes) {
     .enter()
     .append("g")
     .attr("class", "node")
-    .call(d3.drag()
-        .on("start", function () { })//dragstarted)
-        .on("drag", function () { })//dragged)
-
-        //.on("end", dragended)
-    );
 
 
 
-    node.append("circle")
+   node.append("circle")
     .attr("r", function (d) { return d.nodesize })
     .style("fill", function (d, i) { 
         
@@ -273,14 +267,19 @@ function ticked() {
     .attr("x2", function (d) { return d.target.x; })
     .attr("y2", function (d) { return d.target.y; });
 
-    node
-    .attr("transform", function (d) { return "translate(" + d.x + ", " + d.y + ")"; });
-
 
     edgepaths.attr('d', function (d) {
     return 'M ' + d.source.x + ' ' + d.source.y + ' L ' + d.target.x + ' ' + d.target.y;
     });
 
+   
+    node
+     .attr("cx", function(d) { return d.x = Math.max(d.nodesize, Math.min(width - d.nodesize, d.x)); })
+     .attr("cy", function(d) { return d.y = Math.max(d.nodesize, Math.min(height - d.nodesize, d.y)); });
+    
+    node
+    .attr("transform", function (d) { return "translate(" + d.x + ", " + d.y + ")"; });
+    
 
 
 }
@@ -592,6 +591,8 @@ nodes_source = nodes.filter(function(f){return isConnectedAsSource(f.id,d.id)})
 nodes_target = nodes_target.map(d=>{return {name: d.name , authors: d.authors.split('&')[0]}})
 nodes_source = nodes_source.map(d=>{return {name: d.name , authors: d.authors.split('&')[0]}})
 populaTableAfterClick(nodes_target,nodes_source,d.name);
+
+
 };
 
 
@@ -617,3 +618,37 @@ svg.on('click', () => {
     menuItems.attr('visibility', "hidden");
 });
 
+
+
+
+// test do remove overlapping labels
+var test = function (){
+
+
+//Add labels
+labels = d3.selectAll('.mylabel')
+
+var label_array = []
+labels.each(function (){label_array.push({x:this.x,y:this.y})})
+
+//Add height and width of label to array
+var index = 0;
+labels.each(function() {
+    label_array[index].width = this.getBBox().width;
+    label_array[index].height = this.getBBox().height;
+    index += 1;
+});
+
+
+    //Remove overlaps
+d3.labeler()
+    .label(label_array)
+    .anchor(anchorArray)
+    .width(width)
+    .height(height)
+    .start(2000);
+
+
+
+
+}

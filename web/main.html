@@ -169,43 +169,37 @@
   <h2>For some filtering options and metatada check below the graph!</h2>
 
 
-  <div class='container-fluid' style='height: 1000px'>
-    <div class='row h-100'>
-      <div class='col-xl-2 h-100' id='current-selection-outgoing'> </div>
-      <svg class='col-xl-8 h-100' id='canvas'></svg>
-      <!--  <div class='flex-item' id='selected-book'></div> -->
-      <div class='col-xl-2 h-100' id='current-selection-ingoing'> </div>
+  <div class='container-fluid' style='height: 1500px'>
+    <div class='row w-100 h-100'>
+      <div class='col-sm-2 h-100' id='current-selection-outgoing'> </div>
+      <svg class='col-sm-8 h-100' id='canvas'></svg>
+      <div class='col-sm-2 h-100' id='current-selection-ingoing'> </div>
     </div>
-  </div>
-  <div class="container">
 
     <div class='row'>
 
       <div class="col-xl-12 w-50" id='selector'>
         <h1>Use this menu to filter by author</h1>
       </div>
+      </div>
+
+      <div class='row'>
+        <div id="page-wrap">
+
+          <h1>Book Metadata List</h1>
+          <p>Click the table header to sort data according to that column</p>
+          <p>Click on a row to focus that book on the Graph</p>
+        </div>
+
+      </div>
 
     </div>
 
-    <div id="page-wrap">
-
-      <h1>Book Metadata List</h1>
-      <p>Click the table header to sort data according to that column</p>
-      <p>Click on a row to focus that book on the Graph</p>
-    </div>
-
-  </div>
 
 
-
-
-
-
-
-  </div>
   <script src="https://d3js.org/d3.v4.min.js" type="text/javascript"></script>
   <script src="https://d3js.org/d3-selection-multi.v1.js"></script>
-
+  <script src="label.js"></script>
   <script src='chart.js'></script>
 
 </body>
