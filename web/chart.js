@@ -586,8 +586,12 @@ const mouseClickFunction = d => {
     // filter only relevant data
     nodes_target = nodes_target.map(d=>{return {name: d.name , authors: d.authors.split('&')[0]}})
     nodes_source = nodes_source.map(d=>{return {name: d.name , authors: d.authors.split('&')[0]}})
-    populaTableAfterClick(nodes_target,nodes_source,d.name);
 
+    // check if screen too small
+    if(!(d3.select('#canvas').node().getBoundingClientRect().width < 500)){
+        populaTableAfterClick(nodes_target,nodes_source,d.name);
+    }
+    
 
 
 };
