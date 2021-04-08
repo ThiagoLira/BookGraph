@@ -4,7 +4,6 @@ var colors = d3.scaleOrdinal(d3.schemeCategory10);
 let ifClicked = false;
 width = document.getElementById('canvas').clientWidth;
 height = document.getElementById('canvas').clientHeight;
-var label_array = []
 var svg = d3.select("svg"),
     node,
     link
@@ -212,11 +211,7 @@ function update(links, nodes) {
 
 
    node.append("circle")
-    .attr("r", function (d) 
-    { 
-        label_array.push({x:d.x,y:d.y})    
-        return d.nodesize
-     })
+    .attr("r", function (d) { return d.nodesize })
     .style("fill", function (d, i) { 
         
         if (d.is_goodreads){
@@ -228,14 +223,6 @@ function update(links, nodes) {
     
     
     })
-
-    //node.append("title")
-    //    .text(function (d) {return d.id;});
-
-    // node.append("text")
-    // .attr("dy", -3)
-    // .text(function (d) {return d.name;})
-    // .style('opacity' , 1);
 
     simulation
     .nodes(nodes)
@@ -584,10 +571,6 @@ const mouseClickFunction = d => {
     node
     .append("text")
     .attr("dy", -3)
-    // .attr('x',function(o,i){return o.cx})
-    // .attr('y',function(o,i){return o.cy})
-    // .attr('transform',function(o){return o.transform})
-    // .attr('text-anchor','start')
     .attr("class", "mylabel")//adding a label class
     .text(function (o) {
 
@@ -607,7 +590,6 @@ const mouseClickFunction = d => {
 
 
 
-    // test()
 };
 
 
@@ -636,63 +618,3 @@ svg.on('click', () => {
 
 
 
-// test do remove overlapping labels
-var test = function (){
-
-
-//Add labels
-labels = d3.selectAll('.mylabel')
-
-
-var label_array = []
-var anchor_array = []
-
-labels.each(function (d){label_array.push({})})
-labels.each(function (d){anchor_array.push({x:d.x,y:d.y,r:d.nodesize})})
-
-//Add height and width of label to array
-var index = 0;
-labels.each(function(d) {
-    var bbox = this.getBBox()
-    label_array[index].tr = d3.select(this.parentElement).attr('transform')
-    label_array[index].width = bbox.width;
-    label_array[index].height = bbox.height;
-    label_array[index].x = bbox.x;
-    label_array[index].y = bbox.y;
-    index += 1;
-});
-
-var indexes_emtpy = []
-
-label_array.forEach(function (o,i){if (o.width==0){indexes_emtpy.push(i)}})
-
-
-for (var i = indexes_emtpy.length -1; i >= 0; i--){
-   label_array.splice(indexes_emtpy[i],1);
-   anchor_array.splice(indexes_emtpy[i],1);
-}
-
-
-    // // //Remove overlaps
-  // d3.labeler()
-      // .label(label_array)
-      // .anchor(anchor_array)
-      // .width(width)
-      // .height(height)
-      // .start(2000);
-
-    redrawLabels(label_array)
-
-
-}
-
-
-function redrawLabels(label_array){
-    labels
-        .data(label_array)
-        .transition()
-        .duration(1500)
-        .attr('transform',(d)=> d.tr)
-        .attr("x",(d) => d.x)
-        .attr("y",(d) => d.y)
-    }
