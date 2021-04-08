@@ -7,7 +7,8 @@ height = document.getElementById('canvas').clientHeight;
 var label_array = []
 var svg = d3.select("svg"),
     node,
-    link
+    link,
+    labels
 
 // select dropdown
 
@@ -214,7 +215,8 @@ function update(links, nodes) {
    node.append("circle")
     .attr("r", function (d) 
     { 
-        label_array.push({x:d.x,y:d.y})    
+        // initializes one position for each node
+        label_array.push({r:d.nodesize})    
         return d.nodesize
      })
     .style("fill", function (d, i) { 
@@ -269,17 +271,38 @@ var new_pos_x = function (d){return Math.max(d.nodesize, Math.min(width  - d.nod
 var new_pos_y = function (d){return Math.max(d.nodesize, Math.min(height - d.nodesize, d.y))} 
 
 function ticked() {
-    node
-    .attr("transform", function (d) { return "translate(" + new_pos_x(d) + ", " + new_pos_y(d) + ")"; });
-   
-    node
-     .attr("cx", function (d) {return d.x = new_pos_x(d)} )
-     .attr("cy", function(d) { return d.y = new_pos_y(d)}) 
-    
 
-    edgepaths.attr('d', function (d) {
-    return 'M ' + d.source.x + ' ' + d.source.y + ' L ' + d.target.x + ' ' + d.target.y;
-    });
+
+
+    var index=0
+    node
+    .attr("transform", function (d) { label_array[index].tr = "translate(" + new_pos_x(d) + ", " + new_pos_y(d) + ")";
+                                        label_array[index].x = new_pos_x(d);
+                                        label_array[index].y = new_pos_y(d);
+                                        label_array[index].r = d.nodesize;
+                                        index++;
+                                        return  "translate(" + new_pos_x(d) + ", " + new_pos_y(d) + ")";
+                                        });
+   
+    if(labels){
+
+        labels
+        .attr("cx",function(d){return d.x})
+        .attr("cy",function(d){return d.y})
+        .attr("transform",function(d){return d.tr})
+
+
+    }                                        
+
+
+    node
+    .attr("cx", function (d) {return d.x = new_pos_x(d)} )
+    .attr("cy", function(d) { return d.y = new_pos_y(d)}) 
+        
+
+        edgepaths.attr('d', function (d) {
+        return 'M ' + d.source.x + ' ' + d.source.y + ' L ' + d.target.x + ' ' + d.target.y;
+        });
     
     link
     .attr("x1", function (d) { return d.source.x; })
@@ -581,6 +604,21 @@ const mouseClickFunction = d => {
 
 
 
+
+    labels = svg.selectAll('.mylabel')
+              .data(label_array)
+              .enter()
+              .append('text')
+              .attr('cx',(d,i) => {
+                    return d.x;
+                })
+              .attr('cy',(d,i) => {
+                    return d.y;
+                })
+              .attr('transform',(d,i)=> {return d.tr})
+              .text('test OI')
+              .attr('class','mylabel')
+
     node
     .append("text")
     .attr("dy", -3)
@@ -607,7 +645,7 @@ const mouseClickFunction = d => {
 
 
 
-    // test()
+    test()
 };
 
 
@@ -640,48 +678,43 @@ svg.on('click', () => {
 var test = function (){
 
 
-//Add labels
-labels = d3.selectAll('.mylabel')
+
+    var anchor_array = []
+
+    labels.each(function (d){anchor_array.push({x:d.x,y:d.y,r:d.r})})
+
+    //Add height and width of label to array
+    var index = 0;
+    labels.each(function(d) {
+        var bbox = this.getBBox()
+        // label_array[index].tr = d3.select(this.parentElement).attr('transform')
+        label_array[index].width = bbox.width;
+        label_array[index].height = bbox.height;
+        // label_array[index].x = bbox.x;
+        // label_array[index].y = bbox.y;
+        index += 1;
+    });
+
+    // var indexes_emtpy = []
+
+    // label_array.forEach(function (o,i){if (o.width==0){indexes_emtpy.push(i)}})
 
 
-var label_array = []
-var anchor_array = []
-
-labels.each(function (d){label_array.push({})})
-labels.each(function (d){anchor_array.push({x:d.x,y:d.y,r:d.nodesize})})
-
-//Add height and width of label to array
-var index = 0;
-labels.each(function(d) {
-    var bbox = this.getBBox()
-    label_array[index].tr = d3.select(this.parentElement).attr('transform')
-    label_array[index].width = bbox.width;
-    label_array[index].height = bbox.height;
-    label_array[index].x = bbox.x;
-    label_array[index].y = bbox.y;
-    index += 1;
-});
-
-var indexes_emtpy = []
-
-label_array.forEach(function (o,i){if (o.width==0){indexes_emtpy.push(i)}})
+    // for (var i = indexes_emtpy.length -1; i >= 0; i--){
+    // label_array.splice(indexes_emtpy[i],1);
+    // anchor_array.splice(indexes_emtpy[i],1);
+    // }
 
 
-for (var i = indexes_emtpy.length -1; i >= 0; i--){
-   label_array.splice(indexes_emtpy[i],1);
-   anchor_array.splice(indexes_emtpy[i],1);
-}
+        // // // //Remove overlaps
+      d3.labeler()
+          .label(label_array)
+          .anchor(anchor_array)
+          .width(width)
+          .height(height)
+          .start(2000);
 
-
-    // // //Remove overlaps
-  // d3.labeler()
-      // .label(label_array)
-      // .anchor(anchor_array)
-      // .width(width)
-      // .height(height)
-      // .start(2000);
-
-    redrawLabels(label_array)
+         // redrawLabels(label_array)
 
 
 }
@@ -693,6 +726,6 @@ function redrawLabels(label_array){
         .transition()
         .duration(1500)
         .attr('transform',(d)=> d.tr)
-        .attr("x",(d) => d.x)
-        .attr("y",(d) => d.y)
+        .attr("cx",(d) => d.x)
+        .attr("cy",(d) => d.y)
     }
