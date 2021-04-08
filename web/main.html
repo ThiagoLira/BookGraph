@@ -158,18 +158,21 @@
 
 <body>
 
-<div class="jumbotron">
-  <h1 class="text-center">The nodes represent books, two nodes are connected if one book cites the other. </h1>
-  <p class="text-center">The clusters are sorted from left to right by publication date.</p>
-  
-  <p class="text-center">The bottom row of clusters represents books from my calibre library, from which citations are detected and drawn.</p>
-  <p class="text-center">The top row represents books found on a public Goodreads database, these can only be targets of citations since I don't have their text.</p>
-  
-<h2 class='text-center'>Click on any node to focus on it. Hover mouse to see book titles and connections.</h2>  
-<p class='text-center'>After clicking on some node, the tables on the left and right will update with citations from and to the selected book!</p>  
-<p class='text-center'>For some filtering options and metatada check below the graph!</p>  
-</div>
-  
+  <div class="jumbotron">
+    <h1 class="text-center">The nodes represent books, two nodes are connected if one book cites the other. </h1>
+    <p class="text-center">The clusters are sorted from left to right by publication date.</p>
+
+    <p class="text-center">The bottom row of clusters represents books from my calibre library, from which citations are
+      detected and drawn.</p>
+    <p class="text-center">The top row represents books found on a public Goodreads database, these can only be targets
+      of citations since I don't have their text.</p>
+
+    <h2 class='text-center'>Click on any node to focus on it. Hover mouse to see book titles and connections.</h2>
+    <p class='text-center'>After clicking on some node, the tables on the left and right will update with citations from
+      and to the selected book!</p>
+    <p class='text-center'>For some filtering options and metatada check below the graph!</p>
+  </div>
+
 
   <div class='container-fluid' style='height: 1500px'>
     <div class='row w-100 h-100'>
@@ -179,24 +182,25 @@
       <div class='col-sm-2 d-block' id='current-selection-ingoing'> </div>
     </div>
 
-    <div class='row'>
+    <div class='row justify-content-center'>
 
-      <div class="col-xl-12 w-50" id='selector'>
+      <div class="col-xl-4 w-50 align-self-center" id='selector'>
         <h1>Use this menu to filter by author</h1>
       </div>
-      </div>
+    </div>
 
-      <div class='row'>
+    <div class='row justify-content-center'>
+      <div class="col-xl-4 w-50 align-self-center" id='selector'>
         <div id="page-wrap">
 
           <h1>Book Metadata List</h1>
           <p>Click the table header to sort data according to that column</p>
           <p>Click on a row to focus that book on the Graph</p>
         </div>
-
       </div>
-
     </div>
+
+  </div>
 
 
 
