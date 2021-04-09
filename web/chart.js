@@ -1,4 +1,7 @@
 
+
+
+
 var colors = d3.scaleOrdinal(d3.schemeCategory10);
 
 let ifClicked = false;
@@ -149,12 +152,12 @@ d3.json("graph.json", function (error, graph) {
     get_pos_y = get_pos('y',graph)
     
     simulation = d3.forceSimulation()
-    .force("collide", d3.forceCollide(function (d) { return (d.is_goodreads?  d.nodesize+5 :d.nodesize)   }).iterations(2))
-    .force("x", d3.forceX().x(get_pos_x).strength(1))
-    .force("y", d3.forceY().y(get_pos_y).strength(1))
-    .force("link", d3.forceLink().id(function (d) { return d.id; }).strength(0.0001))
-    //.force("charge", d3.forceManyBody())
-    //.force("center", d3.forceCenter(width / 2, height / 2))
+        .force("collide", d3.forceCollide(function (d) { return (d.is_goodreads?  d.nodesize+5 :d.nodesize)   }).iterations(2))
+        .force("x", d3.forceX().x(get_pos_x).strength(1))
+        .force("y", d3.forceY().y(get_pos_y).strength(1))
+        .force("link", d3.forceLink().id(function (d) { return d.id; }).strength(0.0001))
+        //.force("charge", d3.forceManyBody())
+        //.force("center", d3.forceCenter(width / 2, height / 2))
     
     update(graph.links, graph.nodes);
 
@@ -592,8 +595,13 @@ const mouseClickFunction = d => {
         populaTableAfterClick(nodes_target,nodes_source,d.name);
     }
     
-
-
+    // just delete later
+    // trying to make labels not overlap 
+    simulation.force("collide", force_mine(function (o) {  var delta = isConnected(d.id,o.id)? 10 :0;   
+                                                                return (o.is_goodreads?  o.nodesize+5  + delta :o.nodesize + delta)   }).iterations(2))
+    simulation.force("x", d3.forceX().x(get_pos_x).strength(0))
+    simulation.force("y", d3.forceY().y(get_pos_y).strength(0))
+    simulation.alpha(.1).restart();
 };
 
 
@@ -607,6 +615,16 @@ svg.on('click', () => {
     // delete current tables for citations from previously clicked node 
     d3.selectAll('.temp-table').remove()
     d3.selectAll('.temptext').remove()
+    
+
+    // just delete later
+    // trying to make labels not overlap 
+    // return forces to normal 
+    simulation.force("collide", d3.forceCollide(function (d) { return (d.is_goodreads?  d.nodesize+5   :d.nodesize )   }).iterations(2))
+    simulation.force("x", d3.forceX().x(get_pos_x).strength(1))
+    simulation.force("y", d3.forceY().y(get_pos_y).strength(1))
+    simulation.alpha(.1).restart();
+    
     
     node
     .transition(500)
