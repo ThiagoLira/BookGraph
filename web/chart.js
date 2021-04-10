@@ -598,7 +598,7 @@ const mouseClickFunction = d => {
     // just delete later
     // trying to make labels not overlap 
     simulation.force("collide", force_mine(function (o) {  var delta = isConnected(d.id,o.id)? 10 :0;   
-                                                                return (o.is_goodreads?  o.nodesize+5  + delta :o.nodesize + delta)   }).iterations(2))
+                                                                return (o.is_goodreads?  o.nodesize + delta :o.nodesize + delta)   }).iterations(2))
     simulation.force("x", d3.forceX().x(get_pos_x).strength(0))
     simulation.force("y", d3.forceY().y(get_pos_y).strength(0))
     simulation.alpha(.1).restart();
